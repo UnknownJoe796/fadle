@@ -1,7 +1,7 @@
 package com.ivieleague.kbuild
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class MemoizeTest {
     @Test

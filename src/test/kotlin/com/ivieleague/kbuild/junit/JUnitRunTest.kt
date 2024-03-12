@@ -6,7 +6,7 @@ import com.ivieleague.kbuild.kotlin.KotlinJvmCompile
 import com.ivieleague.kbuild.maven.Dependency
 import com.ivieleague.kbuild.maven.MavenAether
 import com.ivieleague.kbuild.maven.aether
-import org.junit.Test
+import kotlin.test.Test
 import java.io.File
 
 class JUnitRunTest {
@@ -17,7 +17,8 @@ class JUnitRunTest {
             MavenAether.libraries(
                 listOf(
                     Dependency(Kotlin.standardLibraryJvmId).aether(),
-                    Dependency("junit:junit:4.12").aether()
+                    Dependency(Kotlin.standardLibraryTestId).aether().also { MavenAether.libraries(listOf(it)).forEach { println(it.default) } },
+                    Dependency(Kotlin.standardLibraryTestJunit5Id).aether().also { MavenAether.libraries(listOf(it)).forEach { println(it.default) } },
                 )
             )
         }.default
@@ -30,7 +31,7 @@ class JUnitRunTest {
                     src.resolve("test.kt").writeText(
                         """
                         package com.test
-                        import org.junit.Test
+                        import kotlin.test.Test
                         class MainTest(){
                             @Test
                             fun canAccessKotlin() {
@@ -57,6 +58,7 @@ class JUnitRunTest {
         )
 
         val results = task()
+        results.forEach { println(it) }
         assert(results.find { it.identifier == "com.test.MainTest.canAccessKotlin" }!!.passed)
         assert(results.find { it.identifier == "com.test.MainTest.logicWorks" }!!.passed)
         assert(!results.find { it.identifier == "com.test.MainTest.fails" }!!.passed)

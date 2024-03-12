@@ -1,6 +1,5 @@
 package com.ivieleague.kbuild
 
-import com.ivieleague.kbuild.antlr.Antlr4GenerateSource
 import com.ivieleague.kbuild.common.*
 import com.ivieleague.kbuild.intellij.IntelliJModuleBuild
 import com.ivieleague.kbuild.intellij.IntelliJProjectBuild
@@ -11,7 +10,7 @@ import com.ivieleague.kbuild.kotlin.Kotlin
 import com.ivieleague.kbuild.kotlin.KotlinJvmCompile
 import com.ivieleague.kbuild.kotlin.KotlinWithJavaCompile
 import com.ivieleague.kbuild.maven.*
-import org.junit.Test
+import kotlin.test.Test
 import java.io.File
 
 class SelfBuildTest {
@@ -52,11 +51,7 @@ class SelfBuildTest {
                 }
             )
         }
-        val antlr = Antlr4GenerateSource(
-            sources = { setOf(root.resolve("src/main/antlr")) },
-            output = root.resolve("kbuild/generated-src/antlr/main")
-        )
-        val sources: Producer<File> = { setOf(File("src/main/kotlin")) } + antlr.asProducer()
+        val sources: Producer<File> = { setOf(File("src/main/kotlin")) }
         val testSources: Producer<File> = { setOf(File("src/test/kotlin")) }
         val build = KotlinWithJavaCompile(
             name = projectIdentifier.name,

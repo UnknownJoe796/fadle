@@ -8,7 +8,7 @@ import java.io.File
 fun Library.intelliJLibraryFile(projectRoot: File) {
     projectRoot.resolve(".idea/libraries/$fileSafeName.xml").also { it.parentFile.mkdirs() }
         .writeText(Node("component").apply {
-        attributes["name"] = "libraryTable"
+        attribute("name", "libraryTable")
         "library" {
             fun File.url(): String = when (extension) {
                 "" -> "file://${invariantSeparatorsPath}/"
@@ -16,7 +16,7 @@ fun Library.intelliJLibraryFile(projectRoot: File) {
                 else -> "file://${invariantSeparatorsPath}/"
             }
 
-            attributes["name"] = fileSafeName
+            attribute("name", fileSafeName)
             "CLASSES" {
                 "root"("url" to default.url())
             }

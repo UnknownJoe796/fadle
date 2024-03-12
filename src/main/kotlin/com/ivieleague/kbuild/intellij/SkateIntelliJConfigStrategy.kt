@@ -9,9 +9,9 @@ object SkateIntelliJConfigStrategy : IntelliJConfigStrategy {
             val batch = File("run_skate.bat").absoluteFile
             batch.writeText("skate %*")
             return listOf(Node("configuration").apply {
-                attributes["name"] = "Interactive Build File"
-                attributes["type"] = "BatchConfigurationType"
-                attributes["factoryName"] = "Batch"
+                attribute("name", "Interactive Build File")
+                attribute("type", "BatchConfigurationType")
+                attribute("factoryName", "Batch")
                 "option"("name" to "INTERPRETER_OPTIONS", "value" to "")
                 "option"("name" to "WORKING_DIRECTORY", "value" to script.absoluteFile.parent)
                 "option"("name" to "PARENT_ENVS", "value" to "true")
@@ -20,9 +20,9 @@ object SkateIntelliJConfigStrategy : IntelliJConfigStrategy {
                 "method"("v" to "2")
             }) + commands.entries.map { (name, command) ->
                 Node("configuration").apply {
-                    attributes["name"] = name
-                    attributes["type"] = "BatchConfigurationType"
-                    attributes["factoryName"] = "Batch"
+                    attribute("name", name)
+                    attribute("type", "BatchConfigurationType")
+                    attribute("factoryName", "Batch")
                     "option"("name" to "INTERPRETER_OPTIONS", "value" to "")
                     "option"("name" to "WORKING_DIRECTORY", "value" to script.absoluteFile.parent)
                     "option"("name" to "PARENT_ENVS", "value" to "true")
@@ -36,8 +36,8 @@ object SkateIntelliJConfigStrategy : IntelliJConfigStrategy {
             bash.writeText("skate $@")
             bash.setExecutable(true)
             return listOf(Node("configuration").apply {
-                attributes["name"] = "Interactive Build File"
-                attributes["type"] = "ShConfigurationType"
+                attribute("name", "Interactive Build File")
+                attribute("type", "ShConfigurationType")
                 "option"("name" to "INTERPRETER_PATH", "value" to "")
                 "option"("name" to "INTERPRETER_OPTIONS", "value" to "")
                 //TODO: ensure working directory
@@ -46,8 +46,8 @@ object SkateIntelliJConfigStrategy : IntelliJConfigStrategy {
                 "method"("v" to "2")
             }) + commands.entries.map { (name, command) ->
                 Node("configuration").apply {
-                    attributes["name"] = name
-                    attributes["type"] = "ShConfigurationType"
+                    attribute("name", name)
+                    attribute("type", "ShConfigurationType")
                     "option"("name" to "INTERPRETER_PATH", "value" to "")
                     "option"("name" to "INTERPRETER_OPTIONS", "value" to "")
                     //TODO: ensure working directory

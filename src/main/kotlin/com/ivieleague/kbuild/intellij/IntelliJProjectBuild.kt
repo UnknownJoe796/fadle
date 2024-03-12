@@ -17,18 +17,18 @@ class IntelliJProjectBuild(
         val ideaFolder = root.resolve(".idea").also { it.mkdirs() }
         ideaFolder.resolve("kotlinc.xml").writeText(Node("project").apply {
             includeXmlProlog = true
-            attributes["version"] = "4"
+            attribute("version", "4")
             "component"("name" to "Kotlin2JvmCompilerArguments") {
-                "option"("name" to "jvmTarget", "value" to "1.8")
+                "option"("name" to "jvmTarget", "value" to "17")
             }
             "component"("name" to "KotlinCommonCompilerArguments") {
-                "option"("name" to "apiVersion", "value" to "1.3")
-                "option"("name" to "languageVersion", "value" to "1.3")
+                "option"("name" to "apiVersion", "value" to "1.9")
+                "option"("name" to "languageVersion", "value" to "1.9")
             }
         }.toString(prettyFormat = true))
         ideaFolder.resolve("modules.xml").writeText(Node("project").apply {
             includeXmlProlog = true
-            attributes["version"] = "4"
+            attribute("version", "4")
             "component"("name" to "ProjectModuleManager") {
                 "modules"() {
                     for (modFile in modFiles) {
@@ -44,7 +44,7 @@ class IntelliJProjectBuild(
         }.toString(prettyFormat = true))
         ideaFolder.resolve("misc.xml").writeText(Node("project").apply {
             includeXmlProlog = true
-            attributes["version"] = "4"
+            attribute("version", "4")
             "component"(
                 "name" to "ProjectRootManager",
                 "version" to "2",

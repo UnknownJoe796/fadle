@@ -1,13 +1,13 @@
 package com.ivieleague.kbuild.kotlin
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.ivieleague.kbuild.common.Library
 import com.ivieleague.kbuild.common.Version
 import com.ivieleague.kbuild.maven.MavenAether
 import com.ivieleague.skate.statusHash
+import kotlinx.serialization.Serializable
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import java.io.File
 
@@ -17,18 +17,32 @@ object Kotlin {
         Exception(messages.filter { it.severity <= CompilerMessageSeverity.WARNING }.joinToString("; ") { it.message + " at " + it.location }
             ?: "An unknown error occurred")
 
-    val version = Version(1, 3, 60)
+    val version = Version(1, 9, 22)
 
     val standardLibraryJvm: Set<Library> by lazy { MavenAether.libraries(standardLibraryJvmId) }
     val standardLibraryJvmId = "org.jetbrains.kotlin:kotlin-stdlib:$version"
 
+    val standardLibraryTest: Set<Library> by lazy { MavenAether.libraries(standardLibraryTestId) }
+    val standardLibraryTestId = "org.jetbrains.kotlin:kotlin-test:$version"
+
+    val standardLibraryTestJunit5: Set<Library> by lazy { MavenAether.libraries(standardLibraryTestJunit5Id) }
+    val standardLibraryTestJunit5Id = "org.jetbrains.kotlin:kotlin-test-junit5:$version"
+
     val standardLibraryJs: Set<Library> by lazy { MavenAether.libraries(standardLibraryJsId) }
     val standardLibraryJsId = "org.jetbrains.kotlin:kotlin-stdlib-js:$version"
 
+    @Serializable
     data class CompilationMessage(
         val severity: CompilerMessageSeverity,
         val message: String,
-        val location: CompilerMessageLocation? = null
+        val location: CompilerMessageSourceLocation2? = null
+    )
+
+    @Serializable
+    data class CompilerMessageSourceLocation2(
+        val path: String,
+        val line: Int,
+        val column: Int,
     )
 
     class CompilationMessageCollector : MessageCollector {
@@ -40,8 +54,14 @@ object Kotlin {
 
         override fun hasErrors(): Boolean = messages.any { it.severity.isError }
 
-        override fun report(severity: CompilerMessageSeverity, message: String, location: CompilerMessageLocation?) {
-            messages.add(CompilationMessage(severity, message, location))
+        override fun report(
+            severity: CompilerMessageSeverity,
+            message: String,
+            location: CompilerMessageSourceLocation?
+        ) {
+            messages.add(CompilationMessage(severity, message, location?.let {
+                CompilerMessageSourceLocation2(it.path, it.line, it.column)
+            }))
         }
     }
 
@@ -50,26 +70,5 @@ object Kotlin {
         var statusHash: Int = 0,
         var api: Set<String> = setOf()
     )
-
-    fun publicDeclarations(files: Sequence<File>, cache: File): Set<String> {
-        val cachedApi =
-            if (cache.exists()) ObjectMapper().readValue<HashMap<String, PublicDeclarationCacheEntry>>(cache) else hashMapOf()
-        val out = HashSet<String>()
-        files.forEach {
-            val rel = it.relativeTo(cache).toString()
-            val existing = cachedApi[rel]
-            val statusHash = it.statusHash()
-            if (existing?.statusHash == statusHash) {
-                out.addAll(existing.api)
-            } else {
-                val partial = HashSet<String>()
-                it.publicDeclarations(partial)
-                cachedApi[rel] = PublicDeclarationCacheEntry(file = rel, statusHash = statusHash, api = partial)
-                out.addAll(partial)
-            }
-        }
-        ObjectMapper().writeValue(cache, cachedApi)
-        return out
-    }
 
 }

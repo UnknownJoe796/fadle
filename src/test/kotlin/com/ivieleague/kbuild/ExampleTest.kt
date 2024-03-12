@@ -11,7 +11,7 @@ import com.ivieleague.kbuild.jvm.*
 import com.ivieleague.kbuild.kotlin.Kotlin
 import com.ivieleague.kbuild.kotlin.KotlinJvmCompile
 import com.ivieleague.kbuild.maven.*
-import org.junit.Test
+import kotlin.test.Test
 import java.io.File
 
 class ExampleTest {
@@ -49,7 +49,7 @@ class ExampleTest {
             result.resolve("MainTest.kt").writeText(
                 """
                     package com.test
-                    import org.junit.Test
+                    import kotlin.test.Test
                     class MainTest(){
                         @Test
                         fun messageIsCorrect() {

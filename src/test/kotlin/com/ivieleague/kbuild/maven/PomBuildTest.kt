@@ -5,7 +5,7 @@ import com.ivieleague.kbuild.keychain.Keychain
 import com.ivieleague.kbuild.keychain.KeychainMap
 import com.ivieleague.kbuild.kotlin.Kotlin
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
-import org.junit.Test
+import kotlin.test.Test
 import java.io.File
 
 class PomBuildTest {

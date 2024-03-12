@@ -4,7 +4,7 @@ import com.ivieleague.kbuild.common.default
 import com.ivieleague.kbuild.kotlin.Kotlin
 import com.ivieleague.kbuild.kotlin.KotlinJvmCompile
 import com.ivieleague.kbuild.maven.MavenAether
-import org.junit.Test
+import kotlin.test.Test
 import java.io.File
 
 class IntelliJTest {

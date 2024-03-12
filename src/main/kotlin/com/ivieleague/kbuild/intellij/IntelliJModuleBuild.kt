@@ -19,8 +19,8 @@ class IntelliJModuleBuild(
         writeText(Node("module").apply {
             val moduleRootVar = "\$MODULE_DIR\$"
             includeXmlProlog = true
-            attributes["type"] = "JAVA_MODULE"
-            attributes["version"] = "4"
+            attribute("type", "JAVA_MODULE")
+            attribute("version", "4")
             "component"("name" to "NewModuleRootManager", "inherit-compiler-output" to "true") {
                 "exclude-output"()
                 "content"("url" to "file://$moduleRootVar") {

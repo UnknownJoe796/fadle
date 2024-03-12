@@ -7,85 +7,102 @@ import com.ivieleague.kbuild.grabStandardOut
 import com.ivieleague.kbuild.jvm.JVM
 import com.ivieleague.kbuild.jvm.JankUntypedWrapper
 import com.ivieleague.kbuild.jvm.untyped
+import org.junit.platform.engine.DiscoverySelector
+import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.engine.TestExecutionResult.Status
+import org.junit.platform.engine.discovery.DiscoverySelectors
+import org.junit.platform.launcher.TestExecutionListener
+import org.junit.platform.launcher.TestIdentifier
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
+import org.junit.platform.launcher.core.LauncherFactory
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
 import java.nio.charset.Charset
 import java.util.*
+import kotlin.jvm.optionals.getOrNull
 
 class JUnitRun(
     val testModule: () -> File,
     val classpath: Producer<File>
 ) : Producer<TestResult>, (Set<String>) -> Set<TestResult> {
-    val tests: Set<String>
+    val testClassNames: Set<String>
         get() {
             val testModuleResult = testModule()
             val loaded = JVM.load(this.classpath().toList() + testModuleResult)
-            val annotationClass = loaded.loadClass("org.junit.Test")
+            val annotationClass = loaded.loadClass("org.junit.jupiter.api.Test")
             val classes = JVM.listJavaClasses(testModuleResult)
             return classes
                 .asSequence()
                 .map { loaded.loadClass(it) }
-                .flatMap { c ->
+                .filter { c ->
                     c.methods
-                        .asSequence()
-                        .filter { it.annotations.any { annotationClass.isInstance(it) } }
-                        .map { c.name + "." + it.name }
+                        .any { it.annotations.any { annotationClass.isInstance(it) } }
                 }
+                .map { it.name }
                 .toSet()
         }
 
-    override fun invoke(): Set<TestResult> = invoke(tests)
-
-
-    override operator fun invoke(tests: Set<String>): Set<TestResult> {
-        val loaded = JVM.load(this.classpath().toList() + testModule())
-        val requestClass = loaded.loadClass("org.junit.runner.Request")
-        val makeRequestMethod = requestClass.getMethod("method", Class::class.java, String::class.java)
-        fun makeRequest(id: String): Any {
-            return makeRequestMethod.invoke(
-                requestClass,
-                loaded.loadClass(id.substringBeforeLast('.')),
-                id.substringAfterLast('.')
-            )
+    override fun invoke(): Set<TestResult> = invoke {
+        testClassNames.map { n ->
+            DiscoverySelectors.selectClass(it, n)
         }
+    }
 
-        val coreClass = loaded.loadClass("org.junit.runner.JUnitCore")
-        val coreInstance = coreClass.getConstructor().newInstance()
-        val runTestMethod = coreClass.getDeclaredMethod(
-            "run",
-            requestClass
-        )
-        println()
-        return tests.mapTo(HashSet()) { testId ->
-            var stdOut = ""
-            var stdErr = ""
-            var duration = 0L
-            var rawResult: JankUntypedWrapper? = null
-            val runAt = Date()
-            stdOut = grabStandardOut {
-                stdErr = grabStandardError {
-                    val start = System.nanoTime()
-                    rawResult = runTestMethod.invoke(coreInstance, makeRequest(testId)).untyped()
-                    duration = System.nanoTime() - start
+    operator fun invoke(selectors: (JVM.JarFileLoader)->List<DiscoverySelector>): Set<TestResult> = buildSet {
+        val loaded = JVM.load(this@JUnitRun.classpath().toList() + testModule())
+        LauncherFactory.create().execute(
+            LauncherDiscoveryRequestBuilder.request()
+                .selectors(selectors(loaded))
+                .build(),
+            object : TestExecutionListener {
+                override fun executionFinished(
+                    testIdentifier: TestIdentifier,
+                    testExecutionResult: TestExecutionResult
+                ) {
+                    add(
+                        TestResult(
+                            testIdentifier.displayName,
+                            testExecutionResult.status == Status.SUCCESSFUL,
+                            standardOutput = "",
+                            standardError = "",
+                            error = testExecutionResult.throwable.getOrNull()?.message,
+                            durationSeconds = 1.0,
+                            runAt = Date(),
+                            runOn = "JUnit 5"
+                        )
+                    )
                 }
             }
-            val result = TestResult(
-                identifier = testId,
-                passed = (rawResult!!.get("failureCount")!!.value as Int) == 0,
-                standardOutput = stdOut,
-                standardError = stdErr,
-                error = rawResult!!.get("failures")?.asList()?.firstOrNull()?.get("exception")?.let { it.value as? Exception }?.let {
-                    val bytes = ByteArrayOutputStream()
-                    it.printStackTrace(PrintStream(bytes))
-                    bytes.toString(Charset.defaultCharset())
-                },
-                durationSeconds = duration.div(1_000_000_000.0),
-                runAt = runAt
-            )
-            print(if (result.passed) "-" else "X")
-            result
-        }.also { println(" Complete.") }
+        )
+    }
+
+    override operator fun invoke(tests: Set<String>): Set<TestResult> = buildSet {
+        val loaded = JVM.load(this@JUnitRun.classpath().toList() + testModule())
+        LauncherFactory.create().execute(
+            LauncherDiscoveryRequestBuilder.request()
+                .selectors(tests.map { DiscoverySelectors.selectMethod(loaded, it) })
+                .build(),
+            object : TestExecutionListener {
+                override fun executionFinished(
+                    testIdentifier: TestIdentifier,
+                    testExecutionResult: TestExecutionResult
+                ) {
+                    add(
+                        TestResult(
+                            testIdentifier.source.getOrNull()?.toString() ?: testIdentifier.displayName,
+                            testExecutionResult.status == Status.SUCCESSFUL,
+                            standardOutput = "",
+                            standardError = "",
+                            error = testExecutionResult.throwable.getOrNull()?.message,
+                            durationSeconds = 1.0,
+                            runAt = Date(),
+                            runOn = "JUnit 5"
+                        )
+                    )
+                }
+            }
+        )
     }
 
 }
